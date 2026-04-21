@@ -1,0 +1,1 @@
+# Lógica para propagar cambios a la red

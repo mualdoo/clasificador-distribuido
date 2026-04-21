@@ -1,0 +1,1 @@
+# Variables globales (IP, Puerto, ID del Nodo)

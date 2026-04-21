@@ -1,0 +1,1 @@
+# Lógica de PyMuPDF (Texto del PDF)
