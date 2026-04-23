@@ -1,4 +1,4 @@
-# 📄 Gestor PDF
+#  Gestor PDF
 
 Aplicación web para organizar y gestionar archivos PDF, con sistema de categorías, roles de usuario y generación de citas en formato APA 7.
 
