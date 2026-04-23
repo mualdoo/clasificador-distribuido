@@ -1,0 +1,11 @@
+services:
+  nodo-pdf:
+    build: .
+    # En lugar de network_mode: host, abrimos los puertos manualmente
+    ports:
+      - "5000:5000/tcp" # Para JSON-RPC
+      - "41234:41234/udp" # Para el Broadcast UDP (Descubrimiento)
+    volumes:
+      - ./data:/app/data
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
