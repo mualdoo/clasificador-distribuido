@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# 📄 Gestor PDF
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web para organizar y gestionar archivos PDF, con sistema de categorías, roles de usuario y generación de citas en formato APA 7.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ⚙️ Instalación
 
-## React Compiler
+```bash
+# 1. Clona el repositorio
+git clone https://github.com/tu-usuario/gestor-pdf.git
+cd gestor-pdf
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# 2. Instala las dependencias
+npm install
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 3. Inicia la aplicación
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Abre tu navegador en `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+> **Credenciales de prueba:**
+> - Administrador: usuario `admin` / contraseña `admin`
+> - Usuario normal: cualquier usuario y contraseña
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## 🗒️ ¿Qué puedes hacer?
+
+### Como usuario normal
+- Iniciar sesión o crear una cuenta
+- Ver tus archivos PDF organizados por categorías y subcategorías
+- Crear y eliminar tus propias categorías y subcategorías desde el sidebar
+- Filtrar archivos haciendo clic en una categoría o subcategoría
+- Seleccionar uno o varios archivos con el checkbox de cada tarjeta
+- Generar citas en formato **APA 7** de los archivos seleccionados y copiarlas al portapapeles
+- Cargar nuevos archivos PDF — la app simula analizarlos y los asigna automáticamente a una categoría
+- Descargar o eliminar archivos individuales
+
+### Como administrador
+- Ver el panel de gestión con la lista de todos los usuarios registrados
+- Cambiar contraseñas, gestionar carpetas o dar de baja usuarios
+- Eliminar cualquier carpeta, incluso si tiene archivos
+
+---
+
+## 🛠️ Tecnologías usadas
+
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vitejs.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Lucide React](https://lucide.dev/) para los íconos
