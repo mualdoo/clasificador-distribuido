@@ -1,7 +1,6 @@
 #  Gestor PDF
 
-Aplicación web para organizar y gestionar archivos PDF, con sistema de categorías, roles de usuario y generación de citas en formato APA 7.
-
+Interfaz del proyecto para organizar articulos en formato PDF por categorias y subcategorias. Esta version solo es visual y no tiene ninguna funcionalidad real (por el momento XD)
 ---
 
 ##  Instalación
