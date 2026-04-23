@@ -7,7 +7,7 @@ Interfaz del proyecto para organizar articulos en formato PDF por categorias y s
 
 ```bash
 # 1. Clona el repositorio
-git clone https://github.com/tu-usuario/gestor-pdf.git
+git clone https://github.com/mualdoo/clasificador-distribuido/tree/main/Gestor-Pdf
 cd gestor-pdf
 
 # 2. Instala las dependencias
@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Abre tu navegador en `http://localhost:5173`
+Abre el navegador en `http://localhost:5173`
 
 > **Credenciales de prueba:**
 > - Administrador: usuario `admin` / contraseña `admin`
