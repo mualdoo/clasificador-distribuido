@@ -4,7 +4,7 @@ Aplicación web para organizar y gestionar archivos PDF, con sistema de categor�
 
 ---
 
-## ⚙️ Instalación
+##  Instalación
 
 ```bash
 # 1. Clona el repositorio
@@ -26,7 +26,9 @@ Abre tu navegador en `http://localhost:5173`
 
 ---
 
-## 🗒️ ¿Qué puedes hacer?
+##  Funcionalidades 
+
+Todo es solo visual, nada Tiene una funcionalidad real 
 
 ### Como usuario normal
 - Iniciar sesión o crear una cuenta
@@ -45,8 +47,7 @@ Abre tu navegador en `http://localhost:5173`
 
 ---
 
-## 🛠️ Tecnologías usadas
-
+##  Tecnologías usadas
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
