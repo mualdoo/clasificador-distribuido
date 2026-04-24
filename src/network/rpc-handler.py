@@ -1,1 +1,0 @@
-# Servidor JSON-RPC (Métodos remotos)
