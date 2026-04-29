@@ -1,9 +1,8 @@
-#  Gestor PDF
+# Gestor PDF
 
-Interfaz del proyecto para organizar articulos en formato PDF por categorias y subcategorias. Esta version solo es visual y no tiene ninguna funcionalidad real (por el momento XD)
----
+## Interfaz del proyecto para organizar articulos en formato PDF por categorias y subcategorias. Esta version solo es visual y no tiene ninguna funcionalidad real (por el momento XD)
 
-##  Instalación
+## Instalación
 
 ```bash
 # 1. Clona el repositorio
@@ -20,16 +19,18 @@ npm run dev
 Abre el navegador en `http://localhost:5173`
 
 > **Credenciales de prueba:**
+>
 > - Administrador: usuario `admin` / contraseña `admin`
 > - Usuario normal: cualquier usuario y contraseña
 
 ---
 
-##  Funcionalidades 
+## Funcionalidades
 
-Todo es solo visual, nada Tiene una funcionalidad real 
+Todo es solo visual, nada Tiene una funcionalidad real
 
 ### Como usuario normal
+
 - Iniciar sesión o crear una cuenta
 - Ver tus archivos PDF organizados por categorías y subcategorías
 - Crear y eliminar tus propias categorías y subcategorías desde el sidebar
@@ -40,14 +41,20 @@ Todo es solo visual, nada Tiene una funcionalidad real
 - Descargar o eliminar archivos individuales
 
 ### Como administrador
+
 - Ver el panel de gestión con la lista de todos los usuarios registrados
 - Cambiar contraseñas, gestionar carpetas o dar de baja usuarios
 - Eliminar cualquier carpeta, incluso si tiene archivos
 
 ---
 
-##  Tecnologías usadas
+## Tecnologías usadas
+
 - [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vitejs.dev/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Lucide React](https://lucide.dev/) para los íconos
+
+## Ejecutar el backend
+
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
