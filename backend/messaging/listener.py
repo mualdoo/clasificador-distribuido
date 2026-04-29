@@ -62,6 +62,7 @@ def _dispatch(raw: str) -> None:
 
     handler = _HANDLERS.get(msg["type"])
     if handler:
+        print('procesando mensaje: ', msg["payload"], msg['node_id'])
         handler(msg["payload"], msg["node_id"])
 
 

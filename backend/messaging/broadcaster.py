@@ -14,6 +14,7 @@ _pub_sock.bind(f"tcp://*:{ZMQ_BROADCAST_PORT}")
 
 def publish(message: str) -> None:
     """Envía un mensaje a todos los nodos suscritos."""
+    print('Enviando un mensaje: ', message)
     _pub_sock.send_string(message)
 
 
