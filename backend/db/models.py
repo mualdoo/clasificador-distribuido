@@ -14,10 +14,17 @@ class Nodo(BaseModel):
     # ID como dirección MAC (XX:XX:XX:XX:XX:XX)
     id = CharField(primary_key=True, max_length=17)
     ip = CharField()
-    # Espacio en bytes, usando BigInteger para prevenir desbordamientos futuros
-    espacio_disponible = BigIntegerField()
+    # Limite máximo, ej: 104857600 (100MB en bytes)
+    espacio_maximo = BigIntegerField(default=104857600) 
+    # Lo que llevamos ocupado. Espacio disponible = maximo - usado
+    espacio_usado = BigIntegerField(default=0)
     activo = BooleanField(default=True)
     ultima_conexion = DateTimeField()
+
+    @property
+    def espacio_disponible(self):
+        # Propiedad calculada al vuelo en Python, no en la BD
+        return self.espacio_maximo - self.espacio_usado
 
 class Usuario(BaseModel):
     id = UUIDField(primary_key=True, default=uuid.uuid4)
@@ -33,6 +40,8 @@ class Archivo(BaseModel):
     categoria = CharField()
     subcategoria = CharField()
     confianza = FloatField()
+    # Nuevo campo: vital para saber cuánto transferir sin ir al disco
+    tamano_bytes = BigIntegerField() 
     propietario = ForeignKeyField(Usuario, backref='archivos')
 
 class UbicacionArchivo(BaseModel):
