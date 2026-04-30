@@ -13,6 +13,7 @@ from backend.api.files import _eliminar_archivo_completo
 from backend.config import ROLE_USER, ROLE_ADMIN
 from backend.messaging.broadcaster import publish
 from backend.messaging.protocol import make_user_registered
+from backend.api.auth import _preparar_contrasena
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 _pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")

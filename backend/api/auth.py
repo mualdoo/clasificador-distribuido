@@ -57,6 +57,11 @@ def require_admin(usuario: Usuario = Depends(get_usuario_actual)) -> Usuario:
         raise HTTPException(status_code=403, detail="Se requiere rol admin.")
     return usuario
 
+# ── Utilidad ──────────────────────────────────────────────────────────────────
+def _preparar_contrasena(contrasena: str) -> str:
+    """bcrypt tiene un límite de 72 bytes — truncar si es necesario."""
+    return contrasena.encode("utf-8")[:72].decode("utf-8", errors="ignore")
+
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -78,7 +83,7 @@ def registro(datos: RegistroSchema, response: Response):
     if Usuario.select().where(Usuario.nombre == datos.nombre).exists():
         raise HTTPException(status_code=409, detail="El nombre de usuario ya existe.")
 
-    hash_pw = _pwd.hash(datos.contrasena)
+    hash_pw = _pwd.hash(_preparar_contrasena(datos.contrasena))
     intereses_str = ",".join(datos.intereses)
 
     usuario = Usuario.create(
@@ -107,7 +112,7 @@ def login(datos: LoginSchema, response: Response):
     except Usuario.DoesNotExist:
         raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
 
-    if not _pwd.verify(datos.contrasena, usuario.contrasena):
+    if not _pwd.verify(_preparar_contrasena(datos.contrasena), usuario.contrasena):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas.")
 
     crear_sesion(response, usuario)
