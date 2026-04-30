@@ -15,6 +15,10 @@ def get_local_ip() -> str:
 NODE_ID: str = get_mac_address()
 NODE_IP: str = get_local_ip()
 
+# ── Red / P2P ──────────────────────────────────────────────────────────────
+REQUEST_TIMEOUT = 2500  # Milisegundos que esperamos antes de considerar que falló un intento
+REQUEST_RETRIES = 3     # Cuántas veces reintentamos antes de dar el nodo por muerto
+
 # ── Red / ZeroMQ ──────────────────────────────────────────────────────────────
 ZMQ_BROADCAST_PORT: int = 5555   # PUB/SUB  — mensajes a todos los nodos
 ZMQ_DIRECT_PORT: int    = 5556   # DEALER/ROUTER — mensajes punto a punto
