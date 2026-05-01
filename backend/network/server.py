@@ -129,7 +129,7 @@ def handle_guardar_archivo(payload: dict) -> dict:
         contenido_bytes = base64.b64decode(contenido_b64)
         
         # 2. Guardar físicamente
-        usuario_id = datos_archivo.get("propietario")
+        usuario_id = datos_archivo.get("propietario").get('id')
         archivo_id = datos_archivo.get("id")
         tamano_real = io_service.guardar_archivo(usuario_id, archivo_id, contenido_bytes)
         
