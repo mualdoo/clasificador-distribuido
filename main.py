@@ -166,4 +166,5 @@ def main():
             print(f"Error ejecutando el comando: {e}")
 
 if __name__ == "__main__":
+    # /media/aldo/Data/Tareas/8vo-semestre/Redes/practica3.pdf
     main()

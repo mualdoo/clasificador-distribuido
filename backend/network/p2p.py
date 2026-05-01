@@ -1,9 +1,20 @@
 import zmq
 import json
 import logging
+import uuid
+import datetime
 from typing import Tuple, Dict, Any
 from backend.network.handler import MessageHandler
 from backend.config import REQUEST_TIMEOUT, REQUEST_RETRIES
+
+def serializador_personalizado(obj):
+    """Le enseña a json.dumps cómo procesar UUIDs y Fechas."""
+    if isinstance(obj, uuid.UUID):
+        return str(obj)
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    raise TypeError(f"El tipo {type(obj)} no es serializable")
+# ---------------------
 
 def iniciar_listener(puerto: int, handler: MessageHandler):
     """
@@ -25,7 +36,7 @@ def iniciar_listener(puerto: int, handler: MessageHandler):
             respuesta = handler.procesar(mensaje)
             
             # Devolvemos la respuesta (ACK) al nodo que nos envió el mensaje
-            socket.send_string(json.dumps(respuesta))
+            socket.send_string(json.dumps(respuesta, default=serializador_personalizado))
             
         except json.JSONDecodeError:
             socket.send_string(json.dumps({"status": "error", "error": "JSON inválido"}))
@@ -47,7 +58,7 @@ def enviar_mensaje(ip: str, puerto: int, tipo: str, payload: dict) -> Tuple[bool
         "tipo": tipo,
         "payload": payload
     }
-    mensaje_str = json.dumps(mensaje)
+    mensaje_str = json.dumps(mensaje, default=serializador_personalizado)
     endpoint = f"tcp://{ip}:{puerto}"
 
     socket = context.socket(zmq.REQ)

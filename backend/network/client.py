@@ -52,7 +52,7 @@ class P2PClient:
         Lee un archivo físico del disco local, lo convierte a Base64 y lo envía junto con sus metadatos
         para que el nodo receptor lo guarde en su propio disco.
         """
-        usuario_id = str(archivo_dict.get("propietario"))
+        usuario_id = str(archivo_dict.get("propietario").get('id'))
         archivo_id = str(archivo_dict.get("id"))
 
         try:
