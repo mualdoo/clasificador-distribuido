@@ -167,4 +167,5 @@ def main():
 
 if __name__ == "__main__":
     # /media/aldo/Data/Tareas/8vo-semestre/Redes/practica3.pdf
+    # 192.168.100.16
     main()
