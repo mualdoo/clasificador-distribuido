@@ -16,6 +16,45 @@ def handle_ping(payload: dict) -> dict:
     """Responde a un ping básico para verificar que el nodo está vivo."""
     return {"mensaje": "pong"}
 
+def handle_recibir_cambios(payload: dict) -> dict:
+    """Procesa un paquete de cambios empujado proactivamente por otro nodo."""
+    cambios = payload.get("cambios", {})
+    estadisticas = {"usuarios": 0, "nodos": 0, "archivos": 0, "ubicaciones": 0}
+
+    # 1. Procesar Usuarios
+    for u in cambios.get("usuarios", []):
+        if usuario_service.model.select().where(usuario_service.model.id == u['id']).exists():
+            usuario_service.update(u['id'], is_sync=True, **u)
+        else:
+            usuario_service.create(is_sync=True, **u)
+        estadisticas["usuarios"] += 1
+
+    # 2. Procesar Nodos
+    for n in cambios.get("nodos", []):
+        if nodo_service.model.select().where(nodo_service.model.id == n['id']).exists():
+            nodo_service.update(n['id'], is_sync=True, **n)
+        else:
+            nodo_service.create(is_sync=True, **n)
+        estadisticas["nodos"] += 1
+
+    # 3. Procesar Archivos (Solo metadatos, el contenido físico debe pedirse aparte si interesa)
+    for a in cambios.get("archivos", []):
+        if archivo_service.model.select().where(archivo_service.model.id == a['id']).exists():
+            archivo_service.update(a['id'], is_sync=True, **a)
+        else:
+            archivo_service.create(is_sync=True, **a)
+        estadisticas["archivos"] += 1
+
+    # 4. Procesar Ubicaciones
+    for ubi in cambios.get("ubicaciones", []):
+        if ubicacion_service.model.select().where(ubicacion_service.model.id == ubi['id']).exists():
+            ubicacion_service.update(ubi['id'], is_sync=True, **ubi)
+        else:
+            ubicacion_service.create(is_sync=True, **ubi)
+        estadisticas["ubicaciones"] += 1
+
+    return {"status": "ok", "mensaje": "Cambios integrados exitosamente", "procesados": estadisticas}
+
 def handle_obtener_cambios(payload: dict) -> dict:
     """
     Devuelve un diccionario consolidado con todas las tablas modificadas
@@ -210,6 +249,7 @@ def registrar_handlers(message_handler):
     con la clase MessageHandler que creamos en el archivo anterior.
     """
     message_handler.registrar("ping", handle_ping)
+    message_handler.registrar("recibir_cambios", handle_recibir_cambios)
     message_handler.registrar("obtener_cambios", handle_obtener_cambios)
     message_handler.registrar("guardar_usuario", handle_guardar_usuario)
     message_handler.registrar("eliminar_usuario", handle_eliminar_usuario)

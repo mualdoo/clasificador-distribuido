@@ -14,6 +14,17 @@ class P2PClient:
     def enviar_ping(self, ip: str, puerto: int) -> Tuple[bool, Dict[str, Any]]:
         """Verifica si un nodo remoto está activo."""
         return enviar_mensaje(ip, puerto, "ping", {})
+    
+    def enviar_cambios(self, ip: str, puerto: int, cambios_dict: dict) -> Tuple[bool, Dict[str, Any]]:
+        """
+        Envía proactivamente un diccionario consolidado de registros a otro nodo.
+        Espera el mismo formato que retorna 'obtener_cambios' 
+        (ej: {"usuarios": [...], "archivos": [...]}).
+        """
+        payload = {
+            "cambios": cambios_dict
+        }
+        return enviar_mensaje(ip, puerto, "recibir_cambios", payload)
 
     def solicitar_cambios(self, ip: str, puerto: int, since_timestamp: datetime) -> Tuple[bool, Dict[str, Any]]:
         """

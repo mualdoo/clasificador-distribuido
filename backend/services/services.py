@@ -60,7 +60,7 @@ class UsuarioService(BaseService):
                 formatted_data['contrasena'] = self._hash_password(formatted_data['contrasena'])
             # Si is_sync es True, confiamos en que ya viene hasheada del otro nodo y no hacemos nada
             
-        return super().create(**formatted_data)
+        return super().create(is_sync=is_sync, **formatted_data)
 
     def update(self, pk_id, is_sync=False, **data):
         formatted_data = self._format_in(data)
@@ -69,4 +69,4 @@ class UsuarioService(BaseService):
         if 'contrasena' in formatted_data and not is_sync:
             formatted_data['contrasena'] = self._hash_password(formatted_data['contrasena'])
             
-        return super().update(pk_id, **formatted_data)
+        return super().update(pk_id, is_sync=is_sync, **formatted_data)

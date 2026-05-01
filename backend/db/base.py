@@ -14,7 +14,8 @@ class BaseModel(Model):
 
     def save(self, *args, **kwargs):
         # Actualización automática de la fecha de edición
-        self.edited_at = datetime.datetime.now()
+        if not getattr(self, '_is_sync', False):
+            self.edited_at = datetime.datetime.now()
         return super(BaseModel, self).save(*args, **kwargs)
 
     def delete_instance(self, recursive=False, delete_nullable=False):

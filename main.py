@@ -3,14 +3,28 @@ import threading
 import uuid
 import os
 
+# --- Base de datos ---
 from backend.db.init_db import inicializar_bd
+
+# --- Capa de Red TCP (ZeroMQ) ---
 from backend.network.handler import MessageHandler
 from backend.network.server import registrar_handlers
 from backend.network.p2p import iniciar_listener
 from backend.network.client import P2PClient
 
-from backend.services.services import UsuarioService, ArchivoService, UbicacionArchivoService
+# --- Capa de Red UDP (Broadcast) ---
+from backend.network.broadcast import iniciar_listener_broadcast
+from backend.network.broadcast_client import BroadcastClient
+from backend.network.broadcast_server import registrar_broadcast_handlers
+
+# --- Servicios ---
+from backend.services.services import UsuarioService, ArchivoService, UbicacionArchivoService, NodoService
 from backend.services.io_service import IOService
+
+def obtener_mac_local() -> str:
+    """Obtiene la dirección MAC real de la computadora en formato XX:XX:XX:XX:XX:XX"""
+    mac = uuid.getnode()
+    return ':'.join(('%012X' % mac)[i:i+2] for i in range(0, 12, 2)).upper()
 
 def imprimir_ayuda():
     print("\n--- Comandos Disponibles ---")
@@ -20,47 +34,69 @@ def imprimir_ayuda():
     print("  subir_archivo <user_id> <ruta_local>   : Guarda un archivo de tu PC en este nodo")
     print("  ver_archivos                           : Lista los archivos locales")
     print("  enviar_archivo <ip> <puerto> <file_id> : Envía un archivo físico a otro nodo")
-    print("  salir                                  : Cierra el nodo")
+    print("  ver_nodos                              : Lista los nodos descubiertos en la red")
+    print("  salir                                  : Cierra el nodo y avisa a la red")
     print("----------------------------\n")
 
 def main():
-    # 1. Obtenemos el puerto por argumento de consola (por defecto 5555)
-    puerto = 5555
+    # 1. Obtenemos el puerto TCP por argumento de consola (por defecto 5555)
+    puerto_tcp = 5555
     if len(sys.argv) > 1:
         try:
-            puerto = int(sys.argv[1])
+            puerto_tcp = int(sys.argv[1])
         except ValueError:
             print("El puerto debe ser un número. Usando 5555 por defecto.")
 
+    # Obtenemos nuestra MAC
+    mi_mac = obtener_mac_local()
+
     # 2. Inicializar Base de Datos
-    print(f"[{puerto}] Inicializando base de datos...")
+    print(f"[{puerto_tcp}] Inicializando base de datos...")
     inicializar_bd()
 
-    # 3. Configurar e iniciar el Servidor (Listener) en un hilo secundario
-    enrutador = MessageHandler()
-    registrar_handlers(enrutador)
-    
-    hilo_servidor = threading.Thread(
+    # 3. Iniciar Servidor TCP (ZeroMQ)
+    enrutador_tcp = MessageHandler()
+    registrar_handlers(enrutador_tcp)
+    hilo_tcp = threading.Thread(
         target=iniciar_listener, 
-        args=(puerto, enrutador),
-        daemon=True # Se cerrará automáticamente cuando salgamos del programa
+        args=(puerto_tcp, enrutador_tcp),
+        daemon=True
     )
-    hilo_servidor.start()
-    print(f"[{puerto}] Servidor P2P escuchando en el puerto {puerto}")
+    hilo_tcp.start()
+    print(f"[{puerto_tcp}] Servidor P2P (TCP) escuchando en puerto {puerto_tcp}")
 
-    # 4. Instanciar cliente y servicios para la terminal local
+    # 4. Iniciar Servidor UDP (Broadcast)
+    # Todos los nodos de tu red usarán este mismo puerto para los gritos UDP
+    puerto_udp_red = 5556 
+    enrutador_udp = MessageHandler()
+    registrar_broadcast_handlers(enrutador_udp)
+    hilo_udp = threading.Thread(
+        target=iniciar_listener_broadcast, 
+        args=(puerto_udp_red, enrutador_udp),
+        daemon=True
+    )
+    hilo_udp.start()
+    print(f"[{puerto_tcp}] Escuchando descubrimientos (UDP) en puerto {puerto_udp_red}")
+
+    # 5. Saludar a la red (Avisar que existimos)
+    cliente_broadcast = BroadcastClient(puerto_udp_red=puerto_udp_red)
+    print("Anunciando presencia a la red local...")
+    # Asumimos que inicialmente tenemos 100MB libres
+    cliente_broadcast.enviar_saludo(mi_mac, puerto_tcp_local=puerto_tcp, espacio_maximo=104857600, espacio_usado=0)
+
+    # 6. Instanciar cliente y servicios para la terminal local
     cliente_p2p = P2PClient()
     usuario_service = UsuarioService()
     archivo_service = ArchivoService()
-    ubicacion_service = UbicacionArchivoService()
+    nodo_service = NodoService()
     io_service = IOService()
 
     imprimir_ayuda()
 
-    # 5. Bucle del Cliente (CLI Interactivo)
+    # 7. Bucle del Cliente (CLI Interactivo)
     while True:
         try:
-            comando_crudo = input(f"Nodo:{puerto} > ").strip().split()
+            comando_crudo = input(f"Nodo:{puerto_tcp} > ").strip().split()
             if not comando_crudo:
                 continue
 
@@ -68,6 +104,8 @@ def main():
             args = comando_crudo[1:]
 
             if accion == "salir":
+                print("Avisando a la red que me desconecto...")
+                cliente_broadcast.enviar_despedida(mi_mac)
                 print("Cerrando nodo...")
                 break
                 
@@ -97,11 +135,18 @@ def main():
             elif accion == "ver_usuarios":
                 usuarios = usuario_service.get_all()
                 for u in usuarios:
-                    print(f" - {u['id']} | {u['nombre']}")
+                    estado = "(Borrado)" if u.get('deleted_at') else ""
+                    print(f" - {u['id']} | {u['nombre']} {estado}")
+                    
+            elif accion == "ver_nodos":
+                nodos = nodo_service.get_all()
+                for n in nodos:
+                    estado = "Activo" if n['activo'] else "Inactivo"
+                    print(f" - {n['id']} | IP: {n['ip']} | Estado: {estado} | Editado: {n['edited_at']}")
 
             elif accion == "subir_archivo":
                 if len(args) != 2:
-                    print("Uso: subir_archivo <user_id> <ruta_local_del_archivo_de_prueba>")
+                    print("Uso: subir_archivo <user_id> <ruta_local_del_archivo>")
                     continue
                 
                 user_id = args[0]
@@ -114,13 +159,11 @@ def main():
                 nuevo_id = str(uuid.uuid4())
                 nombre_archivo = os.path.basename(ruta_local)
                 
-                # Leemos de tu PC y lo guardamos en el storage del nodo
                 with open(ruta_local, 'rb') as f:
                     contenido = f.read()
                     
                 tamano = io_service.guardar_archivo(user_id, nuevo_id, contenido)
                 
-                # Guardamos en base de datos
                 archivo_service.create(
                     id=nuevo_id,
                     nombre=nombre_archivo,
@@ -130,12 +173,13 @@ def main():
                     tamano_bytes=tamano,
                     propietario=user_id
                 )
-                print(f"Archivo '{nombre_archivo}' guardado en el nodo con ID: {nuevo_id}")
+                print(f"Archivo '{nombre_archivo}' guardado localmente con ID: {nuevo_id}")
 
             elif accion == "ver_archivos":
                 archivos = archivo_service.get_all()
                 for a in archivos:
-                    print(f" - {a['id']} | {a['nombre']} ({a['tamano_bytes']} bytes)")
+                    estado = "(Borrado)" if a.get('deleted_at') else ""
+                    print(f" - {a['id']} | {a['nombre']} ({a.get('tamano_bytes', 0)} bytes) {estado}")
 
             elif accion == "enviar_archivo":
                 if len(args) != 3:
@@ -150,7 +194,7 @@ def main():
                     continue
                 
                 ubicacion_dict = {
-                    "nodo": "00:00:00:00:00:00", # Placeholder para pruebas
+                    "nodo": mi_mac,
                     "archivo": file_id,
                     "es_replica": True
                 }
@@ -160,7 +204,7 @@ def main():
                 print(f"Resultado: Exito={exito}, Respuesta={resp}")
 
             else:
-                print(f"Comando desconocido: {accion}. Escribe 'ayuda' para ver las opciones.")
+                print(f"Comando desconocido: {accion}. Escribe 'ayuda'.")
 
         except Exception as e:
             print(f"Error ejecutando el comando: {e}")
