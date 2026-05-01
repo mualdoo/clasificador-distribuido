@@ -8,7 +8,7 @@ class BaseService:
         """Convierte la instancia del modelo a un diccionario de Python."""
         if not instance:
             return None
-        return model_to_dict(instance)
+        return model_to_dict(instance, recurse=False)
 
     def get_one(self, pk_id):
         try:
