@@ -79,6 +79,23 @@ def handle_obtener_cambios(payload: dict) -> dict:
     }
     return cambios
 
+def handle_nodo_inactivo(payload: dict) -> dict:
+    """Recibe el aviso de que un nodo se cayó y lo marca inactivo en la BD local."""
+    nodo_id = payload.get("nodo_id")
+    if not nodo_id:
+        return {"error": "Falta el ID del nodo"}
+    
+    # Verificamos si lo tenemos
+    nodo_existente = nodo_service.get_one(nodo_id)
+    
+    if nodo_existente and nodo_existente.get("activo"):
+        # Lo marcamos como inactivo localmente
+        nodo_service.update(nodo_id, activo=False)
+        import logging
+        logging.warning(f"El nodo {nodo_id} ha sido reportado como INACTIVO por la red.")
+        
+    return {"status": "ok", "mensaje": "Nodo desactivado localmente"}
+
 def handle_guardar_usuario(payload: dict) -> dict:
     """Guarda o actualiza un usuario que viene de otro nodo (is_sync=True)."""
     datos = payload.get("usuario", {})
@@ -110,19 +127,12 @@ def handle_eliminar_usuario(payload: dict) -> dict:
     # 1. Buscar todos los archivos del usuario
     archivos = Archivo.select().where(Archivo.propietario == usuario_id)
     
+    # 2. Eliminar archivo y datos de éste
     for archivo in archivos:
-        # 2. Soft-delete de TODAS las ubicaciones de este archivo
-        ubicaciones = UbicacionArchivo.select().where(UbicacionArchivo.archivo == archivo.id)
-        for ubi in ubicaciones:
-            ubicacion_service.delete(ubi.id)
-            
-        # 3. Hard-delete físico
-        io_service.eliminar_archivo(usuario_id, str(archivo.id))
-        
-        # 4. Soft-delete del archivo en BD
-        archivo_service.delete(archivo.id)
+        # Reutilizamos la lógica del handler anterior para cada archivo
+        handle_eliminar_archivo({"archivo_id": str(archivo.id), "usuario_id": usuario_id})
 
-    # 5. Soft-delete del usuario
+    # 3. Soft-delete del usuario
     exito = usuario_service.delete(usuario_id)
     
     if exito:
@@ -138,6 +148,7 @@ def handle_guardar_metadatos_archivo(payload: dict) -> dict:
         return {"error": "Faltan datos del archivo o ubicaciones"}
 
     archivo_id = datos_archivo.get("id")
+    tamano = datos_archivo.get("tamano_bytes", 0)
     
     # Upsert del archivo
     if Archivo.select().where(Archivo.id == archivo_id).exists():
@@ -148,10 +159,10 @@ def handle_guardar_metadatos_archivo(payload: dict) -> dict:
     # Upsert de TODAS las ubicaciones
     for datos_ubi in datos_ubicaciones:
         ubi_id = datos_ubi.get("id")
-        if ubi_id and UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
-            ubicacion_service.update(ubi_id, **datos_ubi)
-        else:
+        if ubi_id and not UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
             ubicacion_service.create(**datos_ubi)
+            nodo_id_destino = datos_ubi.get("nodo")
+            nodo_service.actualizar_espacio(nodo_id_destino, tamano, sumar=True)
 
     return {"status": "ok", "mensaje": f"Metadatos y {len(datos_ubicaciones)} ubicaciones guardadas"}
 
@@ -171,7 +182,6 @@ def handle_guardar_archivo(payload: dict) -> dict:
         archivo_id = datos_archivo.get("id")
         tamano_real = io_service.guardar_archivo(usuario_id, archivo_id, contenido_bytes)
         
-        # TODO: actualizar el espacio disponible
         datos_archivo["tamano_bytes"] = tamano_real
         
         if Archivo.select().where(Archivo.id == archivo_id).exists():
@@ -182,10 +192,10 @@ def handle_guardar_archivo(payload: dict) -> dict:
         # Upsert de TODAS las ubicaciones
         for datos_ubi in datos_ubicaciones:
             ubi_id = datos_ubi.get("id")
-            if ubi_id and UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
-                ubicacion_service.update(ubi_id, **datos_ubi)
-            else:
+            if ubi_id and not UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
                 ubicacion_service.create(**datos_ubi)
+                nodo_id_destino = datos_ubi.get("nodo")
+                nodo_service.actualizar_espacio(nodo_id_destino, tamano_real, sumar=True)
 
         return {"status": "ok", "mensaje": "Archivo físico y ubicaciones guardados correctamente"}
     except Exception as e:
@@ -228,18 +238,24 @@ def handle_eliminar_archivo(payload: dict) -> dict:
 
     # 1. Eliminar TODAS las ubicaciones conocidas de este archivo
     ubicaciones = UbicacionArchivo.select().where(UbicacionArchivo.archivo == archivo_id)
+    archivo_db = archivo_service.model.get_or_none(archivo_service.model.id == archivo_id)
+    tamano = archivo_db.tamano_bytes if archivo_db else 0
+
     for ubi in ubicaciones:
+        nodo_service.actualizar_espacio(ubi.nodo.id, tamano, sumar=False)
         ubicacion_service.delete(ubi.id)
 
     # 2. Hard-delete físico
-    io_service.eliminar_archivo(usuario_id, archivo_id)
+    try:
+        io_service.eliminar_archivo(usuario_id, archivo_id)
+    except Exception:
+        pass
 
     # 3. Soft-delete del archivo
-    exito = archivo_service.delete(archivo_id)
+    if archivo_db:
+        archivo_service.delete(archivo_id)
 
-    if exito:
-        return {"status": "ok", "mensaje": "Archivo eliminado completamente"}
-    return {"error": "El archivo no existía en la base de datos"}
+    return {"status": "ok", "mensaje": "Archivo eliminado completamente"}
 
 
 def registrar_handlers(message_handler):
@@ -250,6 +266,7 @@ def registrar_handlers(message_handler):
     message_handler.registrar("ping", handle_ping)
     message_handler.registrar("recibir_cambios", handle_recibir_cambios)
     message_handler.registrar("obtener_cambios", handle_obtener_cambios)
+    message_handler.registrar("nodo_inactivo", handle_nodo_inactivo)
     message_handler.registrar("guardar_usuario", handle_guardar_usuario)
     message_handler.registrar("eliminar_usuario", handle_eliminar_usuario)
     message_handler.registrar("guardar_metadatos_archivo", handle_guardar_metadatos_archivo)

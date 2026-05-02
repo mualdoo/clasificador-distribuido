@@ -6,6 +6,20 @@ class NodoService(BaseService):
     def __init__(self):
         super().__init__(Nodo)
 
+    def actualizar_espacio(self, nodo_id: str, tamano_bytes: int, sumar: bool = True):
+        """Suma o resta espacio usado a un nodo y guarda el cambio."""
+        nodo = self.model.get_or_none(self.model.id == nodo_id)
+        if not nodo:
+            return
+
+        if sumar:
+            nodo.espacio_usado += tamano_bytes
+        else:
+            # max(0, ...) evita que por algún bug de red el espacio sea negativo
+            nodo.espacio_usado = max(0, nodo.espacio_usado - tamano_bytes)
+            
+        nodo.save()
+
 class ArchivoService(BaseService):
     def __init__(self):
         super().__init__(Archivo)

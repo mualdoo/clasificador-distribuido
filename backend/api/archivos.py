@@ -49,6 +49,11 @@ def propagar_archivo_red(usuario_id: str, archivo_id: str, archivo_dict: dict, c
             "es_replica": (i > 0)
         })
 
+    # NUEVO: Actualizamos nuestra BD local inmediatamente para reflejar 
+    # que estos nodos ganadores acaban de "gastar" espacio.
+    for ubi in ubicaciones_globales:
+        nodo_service.actualizar_espacio(ubi['nodo'], archivo_dict['tamano_bytes'], sumar=True)
+
     # 2. Distribuir la carga física a los Top 2, pasándoles la lista COMPLETA
     for i, nodo in enumerate(nodos_top_2):
         if nodo['id'] == mi_mac:
@@ -207,13 +212,14 @@ def eliminar_archivo(archivo_id: str, background_tasks: BackgroundTasks, datos_t
 
     propietario_real_id = str(archivo_db.get('propietario'))
 
-    # 1. Eliminación Local
-    # Borrar ubicaciones
+    # NUEVO: Liberar el espacio en la contabilidad local antes de borrar las ubicaciones
     ubis = ubicacion_service.model.select().where(ubicacion_service.model.archivo == archivo_id)
+    tamano = archivo_db.get('tamano_bytes', 0)
+    
     for ubi in ubis:
+        nodo_service.actualizar_espacio(ubi.nodo.id, tamano, sumar=False)
         ubicacion_service.delete(ubi.id)
         
-    # Borrar físico y metadatos
     io_service.eliminar_archivo(propietario_real_id, archivo_id)
     archivo_service.delete(archivo_id)
 
