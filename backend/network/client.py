@@ -50,43 +50,24 @@ class P2PClient:
         }
         return enviar_mensaje(ip, puerto, "eliminar_usuario", payload)
 
-    def sincronizar_metadatos_archivo(self, ip: str, puerto: int, archivo_dict: dict, ubicacion_dict: dict) -> Tuple[bool, Dict[str, Any]]:
-        """Envía solo la información de la base de datos de un archivo, sin su contenido físico."""
+    def sincronizar_metadatos_archivo(self, ip: str, puerto: int, archivo_dict: dict, ubicaciones_list: list) -> Tuple[bool, Dict[str, Any]]:
         payload = {
             "archivo": archivo_dict,
-            "ubicacion": ubicacion_dict
+            "ubicaciones": ubicaciones_list # Cambiado a lista
         }
         return enviar_mensaje(ip, puerto, "guardar_metadatos_archivo", payload)
 
-    def enviar_archivo_fisico(self, ip: str, puerto: int, archivo_dict: dict, ubicacion_dict: dict) -> Tuple[bool, Dict[str, Any]]:
-        """
-        Lee un archivo físico del disco local, lo convierte a Base64 y lo envía junto con sus metadatos
-        para que el nodo receptor lo guarde en su propio disco.
-        """
-        usuario_id = str(archivo_dict.get("propietario"))
-        archivo_id = str(archivo_dict.get("id"))
-
+    def enviar_archivo_desde_memoria(self, ip: str, puerto: int, archivo_dict: dict, ubicaciones_list: list, contenido_bytes: bytes) -> Tuple[bool, Dict[str, Any]]:
         try:
-            # 1. Leemos el archivo físico local usando nuestro servicio
-            contenido_bytes = self.io_service.leer_archivo(usuario_id, archivo_id)
-            
-            # 2. Lo convertimos a string Base64 para poder mandarlo por JSON
             contenido_b64 = base64.b64encode(contenido_bytes).decode('utf-8')
-            
-            # 3. Armamos el payload
             payload = {
                 "archivo": archivo_dict,
-                "ubicacion": ubicacion_dict,
+                "ubicaciones": ubicaciones_list, # Cambiado a lista
                 "contenido_b64": contenido_b64
             }
-            
-            # 4. Enviamos el mensaje
             return enviar_mensaje(ip, puerto, "guardar_archivo", payload)
-            
-        except FileNotFoundError:
-            return False, {"error": "El archivo físico no se encuentra en este nodo local para ser enviado."}
         except Exception as e:
-            return False, {"error": f"Error local preparando el archivo: {str(e)}"}
+            return False, {"error": f"Error local: {str(e)}"}
 
     def solicitar_descarga_archivo(self, ip: str, puerto: int, usuario_id: str, archivo_id: str) -> Tuple[bool, Dict[str, Any]]:
         """

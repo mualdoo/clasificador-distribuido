@@ -46,6 +46,7 @@ def iniciar_listener(puerto: int, handler: MessageHandler):
             socket.send_string(json.dumps({"status": "error", "error": "Error interno del nodo"}))
 
 
+# TODO: marcar como inactivo en caso de error
 def enviar_mensaje(ip: str, puerto: int, tipo: str, payload: dict) -> Tuple[bool, Dict[str, Any]]:
     """
     Envía un mensaje usando un socket REQ (Request) con el patrón "Lazy Pirate" para reintentos.

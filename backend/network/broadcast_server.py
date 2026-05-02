@@ -80,6 +80,7 @@ def handle_saludo(payload: dict) -> dict:
     return {"status": "ok", "mensaje": "Saludo procesado"}
 
 
+# TODO: re-replicar el archivo
 def handle_despedida(payload: dict) -> dict:
     """
     Marca un nodo como inactivo porque nos avisó que se va a desconectar.

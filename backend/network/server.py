@@ -130,12 +130,12 @@ def handle_eliminar_usuario(payload: dict) -> dict:
     return {"error": "Usuario no encontrado"}
 
 def handle_guardar_metadatos_archivo(payload: dict) -> dict:
-    """Guarda información del archivo y su ubicación SIN el archivo físico."""
+    """Guarda información del archivo y sus ubicaciones (array) SIN el archivo físico."""
     datos_archivo = payload.get("archivo")
-    datos_ubi = payload.get("ubicacion")
+    datos_ubicaciones = payload.get("ubicaciones", []) # Ahora esperamos una lista
     
-    if not datos_archivo or not datos_ubi:
-        return {"error": "Faltan datos del archivo o ubicación"}
+    if not datos_archivo or not datos_ubicaciones:
+        return {"error": "Faltan datos del archivo o ubicaciones"}
 
     archivo_id = datos_archivo.get("id")
     
@@ -145,52 +145,51 @@ def handle_guardar_metadatos_archivo(payload: dict) -> dict:
     else:
         archivo_service.create(**datos_archivo)
 
-    # Upsert de la ubicación (Asumimos que el ID de ubicación viene en el payload)
-    ubi_id = datos_ubi.get("id")
-    if ubi_id and UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
-        ubicacion_service.update(ubi_id, **datos_ubi)
-    else:
-        ubicacion_service.create(**datos_ubi)
+    # Upsert de TODAS las ubicaciones
+    for datos_ubi in datos_ubicaciones:
+        ubi_id = datos_ubi.get("id")
+        if ubi_id and UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
+            ubicacion_service.update(ubi_id, **datos_ubi)
+        else:
+            ubicacion_service.create(**datos_ubi)
 
-    return {"status": "ok", "mensaje": "Metadatos guardados"}
+    return {"status": "ok", "mensaje": f"Metadatos y {len(datos_ubicaciones)} ubicaciones guardadas"}
 
 def handle_guardar_archivo(payload: dict) -> dict:
-    """Guarda archivo físico (desde Base64) y sus metadatos/ubicación en DB."""
+    """Guarda archivo físico (desde Base64) y sus metadatos/ubicaciones en DB."""
     datos_archivo = payload.get("archivo", {})
-    datos_ubi = payload.get("ubicacion", {})
+    datos_ubicaciones = payload.get("ubicaciones", []) # Ahora esperamos una lista
     contenido_b64 = payload.get("contenido_b64")
     
     if not contenido_b64 or not datos_archivo:
         return {"error": "Faltan datos o contenido Base64"}
 
     try:
-        # 1. Decodificar Base64 a bytes
         contenido_bytes = base64.b64decode(contenido_b64)
         
-        # 2. Guardar físicamente
         usuario_id = datos_archivo.get("propietario")
         archivo_id = datos_archivo.get("id")
         tamano_real = io_service.guardar_archivo(usuario_id, archivo_id, contenido_bytes)
         
-        # 3. Actualizar el tamaño en los metadatos y guardar en BD
+        # TODO: actualizar el espacio disponible
         datos_archivo["tamano_bytes"] = tamano_real
         
-        # Upsert Archivo
         if Archivo.select().where(Archivo.id == archivo_id).exists():
             archivo_service.update(archivo_id, **datos_archivo)
         else:
             archivo_service.create(**datos_archivo)
 
-        # Upsert Ubicacion
-        if datos_ubi:
+        # Upsert de TODAS las ubicaciones
+        for datos_ubi in datos_ubicaciones:
             ubi_id = datos_ubi.get("id")
             if ubi_id and UbicacionArchivo.select().where(UbicacionArchivo.id == ubi_id).exists():
                 ubicacion_service.update(ubi_id, **datos_ubi)
             else:
                 ubicacion_service.create(**datos_ubi)
 
-        return {"status": "ok", "mensaje": "Archivo y metadatos guardados correctamente"}
+        return {"status": "ok", "mensaje": "Archivo físico y ubicaciones guardados correctamente"}
     except Exception as e:
+        import logging
         logging.error(f"Error guardando archivo físico: {e}")
         return {"error": f"Fallo al procesar el archivo: {str(e)}"}
 
