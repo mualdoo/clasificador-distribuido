@@ -7,7 +7,7 @@ from backend.api.auth import verificar_token
 from backend.services.services import ArchivoService, UbicacionArchivoService, NodoService
 from backend.services.io_service import IOService
 from backend.network.client import P2PClient
-from backend.config import get_mac_address
+from backend.config import NODE_ID
 
 router = APIRouter(prefix="/archivos", tags=["Archivos"])
 
@@ -27,7 +27,7 @@ def clasificador_ia_simulado(nombre_archivo: str):
 
 # --- Tareas en Segundo Plano (Distribución P2P) ---
 def propagar_archivo_red(usuario_id: str, archivo_id: str, archivo_dict: dict, contenido_bytes: bytes):
-    mi_mac = get_mac_address()
+    mi_mac = NODE_ID
     nodos = nodo_service.get_all()
     nodos_activos = [n for n in nodos if n.get('activo')]
 

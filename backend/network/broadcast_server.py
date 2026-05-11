@@ -10,13 +10,12 @@ archivo_service = ArchivoService()
 ubicacion_service = UbicacionArchivoService()
 
 def handle_saludo(payload: dict) -> dict:
-    """
-    Registra/actualiza un nodo que acaba de conectarse y le envía 
-    los cambios ocurridos desde su última conexión vía TCP.
-    """
     mac = payload.get("id")
     puerto_tcp = payload.get("puerto_tcp")
-    ip_origen = payload.get("ip_origen") # Inyectado por nuestro listener UDP
+    
+    # PRIORIDAD A TU IDEA: Usamos la IP explícita del payload. Si no viene, usamos la del socket.
+    ip_origen = payload.get("ip_nodo") or payload.get("ip_origen_udp") 
+    
     espacio_maximo = payload.get("espacio_maximo", 104857600)
     espacio_usado = payload.get("espacio_usado", 0)
 
@@ -24,12 +23,11 @@ def handle_saludo(payload: dict) -> dict:
         logging.warning("Mensaje de saludo ignorado por falta de MAC o puerto TCP")
         return {"error": "Datos incompletos"}
 
-    # 1. Buscamos si el nodo ya existía en nuestra base de datos
+    # 1. Buscamos si el nodo ya existía
     nodo_existente = nodo_service.get_one(mac)
     ultima_conexion = datetime.datetime.min
 
     if nodo_existente:
-        # Extraemos su fecha de última conexión para saber qué mandarle
         ultima_conexion = nodo_existente.get("ultima_conexion")
         if isinstance(ultima_conexion, str):
             try:
@@ -59,8 +57,7 @@ def handle_saludo(payload: dict) -> dict:
         )
         logging.info(f"Nuevo nodo descubierto: {mac} ({ip_origen}).")
 
-    # 2. Recopilamos todos los cambios desde su última conexión
-    # Si ultima_conexion es None (nodo nuevo), los get_all devolverán toda la BD.
+    # 2. Enviar cambios TCP (solo si nosotros tenemos los datos actualizados)
     cambios = {
         "usuarios": usuario_service.get_all(since_timestamp=ultima_conexion),
         "nodos": nodo_service.get_all(since_timestamp=ultima_conexion),
@@ -81,7 +78,4 @@ def handle_saludo(payload: dict) -> dict:
 
 
 def registrar_broadcast_handlers(message_handler):
-    """
-    Conecta estas funciones a un enrutador MessageHandler para UDP.
-    """
     message_handler.registrar("saludo", handle_saludo)

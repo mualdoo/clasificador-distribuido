@@ -8,9 +8,21 @@ def get_mac_address() -> str:
     return ':'.join(f'{(mac >> (8 * i)) & 0xFF:02x}' for i in reversed(range(6)))
 
 def get_local_ip() -> str:
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        s.connect(("8.8.8.8", 80))
-        return s.getsockname()[0]
+    """
+    Intenta conectarse a una IP externa (no necesita internet real)
+    para forzar al SO a revelar qué interfaz usaría para salir a la red.
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # No importa si esta IP existe, el SO elige la interfaz de salida
+        s.connect(('8.8.8.8', 80))
+        ip_local = s.getsockname()[0]
+    except Exception:
+        # Fallback en caso de que no haya ninguna red
+        ip_local = '127.0.0.1'
+    finally:
+        s.close()
+    return ip_local
 
 NODE_ID: str = get_mac_address()
 NODE_IP: str = get_local_ip()

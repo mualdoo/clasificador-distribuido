@@ -25,7 +25,7 @@ from backend.api.auth import router as auth_router
 from backend.api.archivos import router as archivos_router
 from backend.api.admin import router as admin_router
 
-from backend.config import get_mac_address
+from backend.config import NODE_ID
 
 PUERTO_TCP_P2P = 5555
 PUERTO_UDP_RED = 5556
@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     print(f"[*] Inicializando base de datos local...")
     inicializar_bd()
 
-    mi_mac = get_mac_address()
+    mi_mac = NODE_ID
 
     # 1. Iniciar Servidor TCP (ZeroMQ) en segundo plano
     enrutador_tcp = MessageHandler()

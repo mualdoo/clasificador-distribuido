@@ -4,7 +4,7 @@ from backend.db.models import UbicacionArchivo, Archivo
 from backend.services.services import UbicacionArchivoService, NodoService, ArchivoService
 from backend.services.io_service import IOService
 from backend.network.client import P2PClient
-from config import get_mac_address
+from config import NODE_ID
 
 def evaluar_re_replicacion(nodo_muerto_id: str):
     """
@@ -17,7 +17,7 @@ def evaluar_re_replicacion(nodo_muerto_id: str):
     archivo_service = ArchivoService()
     io_service = IOService()
     p2p_client = P2PClient()
-    mi_mac = get_mac_address()
+    mi_mac = NODE_ID
     PUERTO_TCP_RED = 5555
 
     # 1. Archivos que estaban en el nodo que murió (ignorando borrados)
