@@ -38,6 +38,12 @@ def obtener_nodos(admin_data: dict = Depends(requerir_admin)):
     return {"nodos": nodos}
 
 
+@router.post("/ping")
+def obtener_nodos(ip: str, admin_data: dict = Depends(requerir_admin)):
+    exito, respuesta = p2p_client.enviar_ping(ip, PUERTO_TCP_RED)
+    return { exito }
+
+
 @router.get("/usuarios")
 def obtener_usuarios(admin_data: dict = Depends(requerir_admin)):
     """Devuelve todos los usuarios registrados."""

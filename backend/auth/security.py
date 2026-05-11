@@ -16,15 +16,16 @@ def crear_token(usuario_id: str, rol: str) -> str:
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-def decodificar_token(token: str) -> str:
+def decodificar_token(token: str) -> dict: # <-- Ahora devuelve un dict
     """
-    Decodifica el JWT y retorna el ID del usuario.
-    Si el token expiró o es inválido, retorna None.
+    Decodifica el JWT y retorna un diccionario con el id y el rol.
+    Si expiró o es inválido, retorna None.
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("sub")
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
+        return {
+            "id": payload.get("sub"), # El string que te estaba devolviendo antes
+            "rol": payload.get("rol") # El nuevo campo
+        }
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
