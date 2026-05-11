@@ -133,7 +133,6 @@ def handle_nodo_inactivo(payload: dict) -> dict:
 def handle_guardar_usuario(payload: dict) -> dict:
     """Guarda o actualiza un usuario que viene de otro nodo (is_sync=True)."""
     datos = payload.get("usuario", {})
-    print('ohhhhhhh ',datos)
     user_id = datos.get("id")
     
     if not user_id:

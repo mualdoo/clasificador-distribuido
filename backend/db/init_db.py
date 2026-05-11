@@ -33,6 +33,7 @@ def inicializar_bd():
         logging.info("No se detectó un administrador. Creando credenciales por defecto...")
         try:
             usuario_service.create(
+                id="875d36d2-976d-43ea-a69d-28a389cd1f68",
                 nombre="admin",
                 contrasena="admin123",
                 rol="admin",
