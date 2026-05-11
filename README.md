@@ -58,3 +58,13 @@ Todo es solo visual, nada Tiene una funcionalidad real
 ## Como ejecutar el backend
 
 - uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+## CTM windows
+- Permitir ping:
+New-NetFirewallRule -DisplayName "Permitir Ping (ICMPv4)" -Direction Inbound -Action Allow -Protocol ICMPv4
+
+- Abrir puertos:
+# Abrir puerto TCP para mensajes ZeroMQ
+New-NetFirewallRule -DisplayName "P2P_TCP" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5555
+# Abrir puerto UDP para descubrimiento
+New-NetFirewallRule -DisplayName "P2P_UDP" -Direction Inbound -Action Allow -Protocol UDP -LocalPort 5556

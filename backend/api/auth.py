@@ -5,6 +5,7 @@ from typing import List
 from backend.auth.security import crear_token, decodificar_token
 from backend.services.services import UsuarioService, NodoService
 from backend.network.client import P2PClient
+from backend.config import NODE_ID
 
 EXPIRATION_HOURS = 24
 
@@ -28,8 +29,9 @@ class LoginRequest(BaseModel):
 # --- Tareas en Segundo Plano ---
 def notificar_red_nuevo_usuario(usuario_dict: dict):
     """Envía el nuevo usuario a todos los nodos activos de la red."""
+    mi_mac = NODE_ID
     # Obtenemos los nodos activos directamente del modelo
-    nodos_activos = nodo_service.model.select().where(nodo_service.model.activo == True) # TODO: cambiar si hay problemas con broadcast
+    nodos_activos = nodo_service.model.select().where((nodo_service.model.activo == True) & (nodo_service.model.id != mi_mac))
     
     # Asumimos que todos los nodos usan el puerto 5555 para ZeroMQ. 
     # Si guardaste el puerto TCP en tu modelo Nodo, extráelo de ahí.

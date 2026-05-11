@@ -7,6 +7,8 @@ from backend.network.p2p import enviar_mensaje
 from backend.services.io_service import IOService
 from backend.services.services import NodoService
 
+from backend.config import NODE_ID
+
 class P2PClient:
     def __init__(self):
         self.io_service = IOService()
@@ -14,6 +16,9 @@ class P2PClient:
 
     def reportar_falla_nodo(self, ip_fallida: str, puerto: int):
         """Busca qué nodo tiene la IP que falló, lo desactiva y avisa a la red."""
+
+        mi_mac = NODE_ID
+
         nodos_db = self.nodo_service.model.select().where(self.nodo_service.model.ip == ip_fallida)
         if not nodos_db.exists():
             return 
@@ -28,7 +33,8 @@ class P2PClient:
         payload = {"nodo_id": str(nodo_caido.id)}
         nodos_amigos = self.nodo_service.model.select().where(
             (self.nodo_service.model.activo == True) & 
-            (self.nodo_service.model.id != nodo_caido.id)
+            (self.nodo_service.model.id != nodo_caido.id) & 
+            (self.nodo_service.model.id != mi_mac)
         )
         for nodo_amigo in nodos_amigos:
             enviar_mensaje(nodo_amigo.ip, puerto, "nodo_inactivo", payload)
