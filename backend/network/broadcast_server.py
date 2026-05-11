@@ -80,28 +80,8 @@ def handle_saludo(payload: dict) -> dict:
     return {"status": "ok", "mensaje": "Saludo procesado"}
 
 
-# TODO: re-replicar el archivo
-def handle_despedida(payload: dict) -> dict:
-    """
-    Marca un nodo como inactivo porque nos avisó que se va a desconectar.
-    """
-    mac = payload.get("id")
-    if not mac:
-        return {"error": "Falta ID del nodo"}
-
-    nodo_existente = nodo_service.get_one(mac)
-    if nodo_existente:
-        # Se marca como inactivo y guardamos cuándo fue la última vez que lo vimos
-        nodo_service.update(mac, activo=False, ultima_conexion=datetime.datetime.now())
-        logging.info(f"El nodo {mac} se ha desconectado limpiamente.")
-        return {"status": "ok", "mensaje": "Nodo marcado como inactivo"}
-    
-    return {"error": "Nodo no encontrado"}
-
-
 def registrar_broadcast_handlers(message_handler):
     """
     Conecta estas funciones a un enrutador MessageHandler para UDP.
     """
     message_handler.registrar("saludo", handle_saludo)
-    message_handler.registrar("despedida", handle_despedida)

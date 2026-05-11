@@ -4,6 +4,7 @@ from datetime import datetime
 from backend.services.services import UsuarioService, ArchivoService, UbicacionArchivoService, NodoService
 from backend.services.io_service import IOService
 from backend.db.models import Archivo, UbicacionArchivo # Necesarios para consultas directas de relaciones
+import threading
 
 # Inicialización de servicios
 usuario_service = UsuarioService()
@@ -78,6 +79,39 @@ def handle_obtener_cambios(payload: dict) -> dict:
         "ubicaciones": ubicacion_service.get_all(since_timestamp=since)
     }
     return cambios
+
+def handle_nodo_inactivo(payload: dict) -> dict:
+    nodo_id = payload.get("nodo_id")
+    if not nodo_id:
+        return {"error": "Falta el ID del nodo"}
+    
+    nodo_existente = nodo_service.get_one(nodo_id)
+    
+    if nodo_existente and nodo_existente.get("activo"):
+        # 1. Desactivar localmente
+        nodo_service.update(nodo_id, activo=False)
+        import logging
+        logging.warning(f"Nodo {nodo_id} desactivado. Iniciando evaluación de réplicas locales...")
+        
+        # 2. Propagar el chisme (por si fuimos los primeros en darnos cuenta)
+        payload_chisme = {"nodo_id": nodo_id}
+        nodos_amigos = nodo_service.model.select().where(
+            (nodo_service.model.activo == True) & 
+            (nodo_service.model.id != nodo_id)
+        )
+        for amigo in nodos_amigos:
+            from backend.network.p2p import enviar_mensaje
+            enviar_mensaje(amigo.ip, 5555, "nodo_inactivo", payload_chisme)
+
+        # 3. Iniciar recuperación local de mis archivos
+        from backend.services.recovery import evaluar_re_replicacion
+        hilo_recuperacion = threading.Thread(
+            target=evaluar_re_replicacion, 
+            args=(nodo_id,)
+        )
+        hilo_recuperacion.start()
+
+    return {"status": "ok"}
 
 def handle_nodo_inactivo(payload: dict) -> dict:
     """Recibe el aviso de que un nodo se cayó y lo marca inactivo en la BD local."""

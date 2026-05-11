@@ -19,12 +19,3 @@ class BroadcastClient:
             "espacio_usado": espacio_usado
         }
         return enviar_broadcast(self.puerto_udp_red, "saludo", payload)
-
-    def enviar_despedida(self, nodo_id: str) -> bool:
-        """
-        Avisa a la red local que este nodo se va a desconectar.
-        """
-        payload = {
-            "id": nodo_id
-        }
-        return enviar_broadcast(self.puerto_udp_red, "despedida", payload)
