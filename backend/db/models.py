@@ -45,6 +45,7 @@ class Archivo(BaseModel):
     propietario = ForeignKeyField(Usuario, backref='archivos')
 
 class UbicacionArchivo(BaseModel):
+    id = CharField(primary_key=True)
     nodo = ForeignKeyField(Nodo, backref='ubicaciones')
     archivo = ForeignKeyField(Archivo, backref='nodos')
     es_replica = BooleanField(default=False)

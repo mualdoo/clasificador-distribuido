@@ -104,3 +104,10 @@ def eliminar_usuario(
     background_tasks.add_task(propagar_eliminacion_usuario_red, usuario_id)
 
     return {"mensaje": "Usuario eliminado, espacio liberado y orden de borrado enviada a la red P2P."}
+
+
+@router.get("/ubicaciones")
+def obtener_nodos(admin_data: dict = Depends(requerir_admin)):
+    """Devuelve la lista de todas las ubicaciones de archivos en la red P2P."""
+    ubis = ubicacion_service.get_all()
+    return {"ubicaciones": ubis}

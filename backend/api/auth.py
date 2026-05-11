@@ -81,7 +81,7 @@ def registrar_usuario(datos: RegistroRequest, background_tasks: BackgroundTasks)
     )
 
     # Delegamos la replicación P2P a un hilo de fondo para no hacer esperar al cliente
-    background_tasks.add_task(notificar_red_nuevo_usuario, nuevo_usuario)
+    background_tasks.add_task(notificar_red_nuevo_usuario, nuevo_usuario.copy())
 
     # Ocultamos el hash antes de devolver la respuesta
     nuevo_usuario.pop('contrasena', None)
