@@ -18,7 +18,7 @@ del df_clases # Liberamos memoria inmediatamente
 print("\nConfigurando motor de IA...")
 # max_features asegura que la huella de memoria se mantenga baja
 vectorizador = HashingVectorizer(n_features=2**18, stop_words='english', alternate_sign=False)
-modelo = SGDClassifier(loss='hinge', random_state=42)
+modelo = SGDClassifier(loss='log_loss', random_state=42)
 
 # 3. Entrenamiento por lotes (Chunking)
 tamano_lote = 50000
@@ -41,7 +41,7 @@ for i, lote in enumerate(lotes):
 
 # 4. Guardado de los pesos y el cerebro
 print("\nEntrenamiento finalizado. Guardando archivos .pkl...")
-joblib.dump(modelo, 'clasificador_nodos.pkl')
-joblib.dump(vectorizador, 'vectorizador_nodos.pkl')
+joblib.dump(modelo, 'model.pkl')
+joblib.dump(vectorizador, 'vectorizador.pkl')
 
-print("¡Éxito! Archivos generados: 'clasificador_nodos.pkl' y 'vectorizador_nodos.pkl'")
+print("¡Éxito! Archivos generados: 'model.pkl' y 'vectorizador.pkl'")

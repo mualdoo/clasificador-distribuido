@@ -113,23 +113,6 @@ def handle_nodo_inactivo(payload: dict) -> dict:
 
     return {"status": "ok"}
 
-def handle_nodo_inactivo(payload: dict) -> dict:
-    """Recibe el aviso de que un nodo se cayó y lo marca inactivo en la BD local."""
-    nodo_id = payload.get("nodo_id")
-    if not nodo_id:
-        return {"error": "Falta el ID del nodo"}
-    
-    # Verificamos si lo tenemos
-    nodo_existente = nodo_service.get_one(nodo_id)
-    
-    if nodo_existente and nodo_existente.get("activo"):
-        # Lo marcamos como inactivo localmente
-        nodo_service.update(nodo_id, activo=False)
-        import logging
-        logging.warning(f"El nodo {nodo_id} ha sido reportado como INACTIVO por la red.")
-        
-    return {"status": "ok", "mensaje": "Nodo desactivado localmente"}
-
 def handle_guardar_usuario(payload: dict) -> dict:
     """Guarda o actualiza un usuario que viene de otro nodo (is_sync=True)."""
     datos = payload.get("usuario", {})
