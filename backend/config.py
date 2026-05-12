@@ -47,7 +47,7 @@ DATABASE_PATH: Path = BASE_DIR / "db" / "database.db"
 # ── ML ────────────────────────────────────────────────────────────────────────
 ML_DIR         = BASE_DIR / "ml"
 MODEL_PATH     = ML_DIR / "model.pkl"
-ENCODER_PATH   = ML_DIR / "label_encoder.pkl"
+ENCODER_PATH   = ML_DIR / "vectorizador.pkl"
 
 # ── API ───────────────────────────────────────────────────────────────────────
 API_HOST: str = "0.0.0.0"

@@ -4,7 +4,7 @@ from backend.db.models import UbicacionArchivo, Archivo
 from backend.services.services import UbicacionArchivoService, NodoService, ArchivoService
 from backend.services.io_service import IOService
 from backend.network.client import P2PClient
-from config import NODE_ID
+from backend.config import NODE_ID
 
 def evaluar_re_replicacion(nodo_muerto_id: str):
     """
