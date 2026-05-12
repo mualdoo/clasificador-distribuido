@@ -84,3 +84,7 @@ class UsuarioService(BaseService):
             formatted_data['contrasena'] = self._hash_password(formatted_data['contrasena'])
             
         return super().update(pk_id, is_sync=is_sync, **formatted_data)
+    
+    def get_password_hash(self, contrasena: str) -> str:
+
+        return self._hash_password(contrasena)

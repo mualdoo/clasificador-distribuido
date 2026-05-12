@@ -1,12 +1,12 @@
-export interface SubCategory {
-  id: string;
-  name: string;
-}
-
 export interface Category {
   id: string;
   name: string;
   subCategories: SubCategory[];
+}
+
+export interface SubCategory {
+  id: string;
+  name: string;
 }
 
 export interface PDFFile {
@@ -19,11 +19,11 @@ export interface PDFFile {
   subCategoryName: string;
 }
 
+export type Role = 'admin' | 'user';
+
 export interface User {
   id: string;
   username: string;
-  role: 'admin' | 'user';
+  role: Role;
   folders: number;
 }
-
-export type Role = 'admin' | 'user';

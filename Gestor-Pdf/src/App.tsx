@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { FileText } from 'lucide-react';
 import LoginModal from './components/LoginModal';
 import Header from './components/Header';
@@ -9,6 +10,10 @@ import CitationModal from './components/CitationModal';
 import AdminView from './components/AdminView';
 import NodesIndicator from './components/NodesIndicator';
 import { Category, PDFFile, Role, User } from './types';
+
+//el coso del api Xd
+import { getFiles, logout as apiLogout, getProfile, deleteFile } from './api'
+
 
 // ─── Seed data ───────────────────────────────────────────────────────────────
 const INITIAL_CATEGORIES: Category[] = [
@@ -43,39 +48,20 @@ const INITIAL_CATEGORIES: Category[] = [
   },
 ];
 
-const INITIAL_FILES: PDFFile[] = [
-  { id: 'f1', name: 'JavaScript Avanzado.pdf',    size: '5.1 MB', date: '12/04/2026', categoryId: 'prog',   subCategoryId: 'js',    subCategoryName: 'JavaScript' },
-  { id: 'f2', name: 'TypeScript Básico.pdf',       size: '4.5 MB', date: '05/04/2026', categoryId: 'prog',   subCategoryId: 'js',    subCategoryName: 'JavaScript' },
-  { id: 'f3', name: 'Python para Data Science.pdf',size: '7.2 MB', date: '01/04/2026', categoryId: 'prog',   subCategoryId: 'py',    subCategoryName: 'Python'     },
-  { id: 'f4', name: 'React Hooks en Profundidad.pdf',size:'3.8 MB',date: '20/03/2026', categoryId: 'prog',   subCategoryId: 'react', subCategoryName: 'React'      },
-  { id: 'f5', name: 'Cálculo Diferencial.pdf',     size: '6.1 MB', date: '15/03/2026', categoryId: 'math',   subCategoryId: 'calc',  subCategoryName: 'Cálculo'    },
-  { id: 'f6', name: 'Álgebra Lineal Moderna.pdf',  size: '5.4 MB', date: '10/03/2026', categoryId: 'math',   subCategoryId: 'alg',   subCategoryName: 'Álgebra'    },
-  { id: 'f7', name: 'Fundamentos de UI.pdf',       size: '4.9 MB', date: '08/03/2026', categoryId: 'design', subCategoryId: 'ui',    subCategoryName: 'UI/UX'      },
-  { id: 'f8', name: 'Guía de Branding 2026.pdf',   size: '8.3 MB', date: '02/03/2026', categoryId: 'design', subCategoryId: 'brand', subCategoryName: 'Branding'   },
-  { id: 'f9', name: 'Estrategia de Marketing.pdf', size: '3.2 MB', date: '25/02/2026', categoryId: 'biz',    subCategoryId: 'mkt',   subCategoryName: 'Marketing'  },
-  { id:'f10', name: 'Análisis Financiero.pdf',     size: '5.7 MB', date: '18/02/2026', categoryId: 'biz',    subCategoryId: 'fin',   subCategoryName: 'Finanzas'   },
-  { id:'f11', name: 'Documento Sin Clasificar.pdf',size: '2.1 MB', date: '10/02/2026', categoryId: 'general',subCategoryId: '',      subCategoryName: 'General'    },
-];
 
-const INITIAL_USERS: User[] = [
-  { id: 'u1', username: 'usuario1',   role: 'user',  folders: 5 },
-  { id: 'u2', username: 'usuario2',   role: 'user',  folders: 3 },
-  { id: 'u3', username: 'admin',      role: 'admin', folders: 0 },
-  { id: 'u4', username: 'maria.lopez',role: 'user',  folders: 8 },
-  { id: 'u5', username: 'carlos.ruiz',role: 'user',  folders: 2 },
-];
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
   // Auth
   const [loggedIn, setLoggedIn]     = useState(false);
   const [username, setUsername]     = useState('');
-  const [role, setRole]             = useState<Role>('user');
+const [role, setRole]             = useState<Role>('user'); 
+const [actualRole, setActualRole] = useState<Role>('user'); 
 
   // Data
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [files, setFiles]           = useState<PDFFile[]>(INITIAL_FILES);
-  const [users, setUsers]           = useState<User[]>(INITIAL_USERS);
+  const [files, setFiles]           = useState<PDFFile[]>([]);
+  const [users, setUsers]           = useState<User[]>([]);
 
   // Navigation
   const [selCatId, setSelCatId]     = useState<string | null>(null);
@@ -91,18 +77,25 @@ export default function App() {
   // ── Auth handlers ──────────────────────────────────────────────────────────
   const handleLogin = (uname: string, r: Role) => {
     setUsername(uname);
+    setActualRole(r);
     setRole(r);
     setLoggedIn(true);
     setSelCatId(null);
     setSelSubId(null);
   };
 
-  const handleLogout = () => {
-    setLoggedIn(false);
-    setUsername('');
-    setRole('user');
-    setSelectedIds(new Set());
-  };
+  const handleLogout = async () => {
+  try {
+    await apiLogout();
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+  }
+  setLoggedIn(false);
+  setUsername('');
+  setRole('user');
+  setSelectedIds(new Set());
+  setFiles([]);
+};
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   const handleSelectCategory = (catId: string) => {
@@ -149,11 +142,16 @@ export default function App() {
   };
 
   // ── File CRUD ──────────────────────────────────────────────────────────────
-  const handleDeleteFile = (fileId: string) => {
+ const handleDeleteFile = async (fileId: string) => {
+  try {
+    await deleteFile(fileId);
     setFiles(prev => prev.filter(f => f.id !== fileId));
     setSelectedIds(prev => { const s = new Set(prev); s.delete(fileId); return s; });
+  } catch (error) {
+    console.error('Error al eliminar archivo:', error);
+    alert('Error al eliminar el archivo');
+  }
   };
-
   const handleToggleSelect = (fileId: string) => {
     setSelectedIds(prev => {
       const s = new Set(prev);
@@ -163,18 +161,10 @@ export default function App() {
   };
 
   // ── Upload ─────────────────────────────────────────────────────────────────
-  const handleUpload = (fileName: string, _category: string) => {
-    const newFile: PDFFile = {
-      id: 'f-' + Date.now(),
-      name: fileName,
-      size: `${(Math.random() * 8 + 1).toFixed(1)} MB`,
-      date: new Date().toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '/'),
-      categoryId: 'general',
-      subCategoryId: '',
-      subCategoryName: 'General',
-    };
-    setFiles(prev => [...prev, newFile]);
-  };
+ const handleUpload = async (fileName: string, _category: string) => {
+  // Esta función se llamará desde UploadModal después de subir el archivo
+  await loadFiles(); // Recargar la lista de archivos
+};
 
   // ── User management ────────────────────────────────────────────────────────
   const handleDeleteUser = (userId: string) => {
@@ -204,6 +194,36 @@ export default function App() {
   })();
 
   // ─────────────────────────────────────────────────────────────────────────
+
+    useEffect(() => {
+    if (loggedIn) {
+      loadFiles();
+    }
+  }, [loggedIn]);
+
+  const loadFiles = async () => {
+    try {
+      const data = await getFiles();
+      // Transformar los datos del backend al formato de la UI
+      const transformedFiles = data.archivos.map((file: any) => ({
+        id: file.id,
+        name: file.nombre,
+        size: `${(file.tamano / 1024 / 1024).toFixed(1)} MB`,
+        date: new Date(file.fecha_subida).toLocaleDateString('es-MX', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        }),
+        categoryId: file.categoria || 'general',
+        subCategoryId: file.subcategoria || '',
+        subCategoryName: file.subcategoria || 'General',
+      }));
+      setFiles(transformedFiles);
+    } catch (error) {
+      console.error('Error al cargar archivos:', error);
+    }
+  };
+
   if (!loggedIn) return <LoginModal onLogin={handleLogin} />;
 
   const isAdmin = role === 'admin';
@@ -214,6 +234,7 @@ export default function App() {
       <Header
         username={username}
         role={role}
+        actualRole={actualRole} 
         onRoleChange={setRole}
         onLogout={handleLogout}
       />
@@ -308,7 +329,7 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <NodesIndicator />
+      <NodesIndicator  actualRole={actualRole}/>
 
       {/* Modals */}
       {showUpload && (

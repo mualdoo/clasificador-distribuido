@@ -114,7 +114,8 @@ def iniciar_sesion(datos: LoginRequest, response: Response):
         secure=False # Cambiar a True en producción cuando tengas HTTPS
     )
 
-    return {"mensaje": "Inicio de sesión exitoso"}
+    return {"mensaje": "Inicio de sesión exitoso",
+            "role": usuario_db.rol}
 
 
 @router.post("/logout")

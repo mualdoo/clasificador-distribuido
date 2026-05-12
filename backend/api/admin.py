@@ -5,6 +5,7 @@ from backend.services.services import UsuarioService, NodoService, ArchivoServic
 from backend.services.io_service import IOService
 from backend.network.client import P2PClient
 from backend.db.models import Archivo, UbicacionArchivo
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/admin", tags=["Administración"])
 
@@ -28,6 +29,20 @@ def propagar_eliminacion_usuario_red(usuario_id: str):
     for nodo in nodos_activos:
         p2p_client.eliminar_usuario_remoto(nodo['ip'], PUERTO_TCP_RED, usuario_id)
 
+
+
+# Modelos auxiliares para recibir los datos
+class UpdateRolRequest(BaseModel):
+    rol: str
+
+class UpdatePasswordRequest(BaseModel):
+    contrasena: str
+
+class AdminCreateUserRequest(BaseModel):
+    nombre: str
+    contrasena: str
+    rol: str
+    intereses: list = []
 
 # --- Endpoints de Administración ---
 
@@ -111,3 +126,42 @@ def obtener_nodos(admin_data: dict = Depends(requerir_admin)):
     """Devuelve la lista de todas las ubicaciones de archivos en la red P2P."""
     ubis = ubicacion_service.get_all()
     return {"ubicaciones": ubis}
+
+
+@router.put("/usuarios/{usuario_id}/rol")
+def actualizar_rol(usuario_id: str, datos: UpdateRolRequest, admin_data: dict = Depends(requerir_admin)):
+    usuario = usuario_service.get_one(usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    usuario_service.model.update(rol=datos.rol).where(usuario_service.model.id == usuario_id).execute()
+    return {"mensaje": "Rol actualizado correctamente"}
+
+@router.put("/usuarios/{usuario_id}/password")
+def actualizar_password(usuario_id: str, datos: UpdatePasswordRequest, admin_data: dict = Depends(requerir_admin)):
+    usuario = usuario_service.get_one(usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+ 
+    hash_nuevo = usuario_service.get_password_hash(datos.contrasena)
+    usuario_service.model.update(contrasena=hash_nuevo).where(usuario_service.model.id == usuario_id).execute()
+    return {"mensaje": "Contraseña actualizada correctamente"}
+
+@router.post("/usuarios")
+def crear_usuario_admin(datos: AdminCreateUserRequest, background_tasks: BackgroundTasks, admin_data: dict = Depends(requerir_admin)):
+   
+    existe = usuario_service.model.select().where(usuario_service.model.nombre == datos.nombre).exists()
+    if existe:
+        raise HTTPException(status_code=400, detail="El nombre de usuario ya está en uso.")
+
+    nuevo_usuario = usuario_service.create(
+        nombre=datos.nombre,
+        contrasena=datos.contrasena,
+        rol=datos.rol,
+        intereses=datos.intereses
+    )
+
+    from backend.api.auth import notificar_red_nuevo_usuario
+    background_tasks.add_task(notificar_red_nuevo_usuario, nuevo_usuario.copy())
+
+    return {"mensaje": "Usuario creado desde admin"}

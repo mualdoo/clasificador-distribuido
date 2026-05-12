@@ -3,6 +3,7 @@ import uuid
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- Base de datos ---
 from backend.db.init_db import inicializar_bd
@@ -95,6 +96,19 @@ app = FastAPI(
     description="API para gestión descentralizada de archivos y nodos",
     version="1.0.0",
     lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # Vite (desarrollo)
+        "http://localhost:3000",  # React (alternativo)
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
+    allow_credentials=True,  # IMPORTANTE: Permite cookies
+    allow_methods=["*"],     # Permite todos los métodos (GET, POST, DELETE, etc.)
+    allow_headers=["*"],     # Permite todos los headers
 )
 
 # --- Inclusión de Rutas ---

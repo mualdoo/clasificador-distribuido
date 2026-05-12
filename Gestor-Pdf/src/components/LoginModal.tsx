@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { login, register } from '../api';
 import { X } from 'lucide-react';
 
 interface Props {
@@ -14,33 +15,44 @@ export default function LoginModal({ onLogin }: Props) {
   const [regPass2, setRegPass2] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!username || !password) {
-      setError('Por favor completa todos los campos.');
-      return;
-    }
-    if (username === 'admin' && password === 'admin') {
-      onLogin('admin', 'admin');
-    } else {
-      onLogin(username, 'user');
-    }
-  };
+ const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  if (!username || !password) {
+    setError('Por favor completa todos los campos.');
+    return;
+  }
+  
+  try {
+    const response = await login(username, password);
+    // El backend devuelve el rol en la respuesta
+    onLogin(username, response.role || 'user');
+  } catch (err: any) {
+    setError(err.message || 'Error al iniciar sesión');
+  }
+};
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    if (!regUser || !regPass || !regPass2) {
-      setError('Por favor completa todos los campos.');
-      return;
-    }
-    if (regPass !== regPass2) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-    onLogin(regUser, 'user');
-  };
+const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError('');
+  if (!regUser || !regPass || !regPass2) {
+    setError('Por favor completa todos los campos.');
+    return;
+  }
+  if (regPass !== regPass2) {
+    setError('Las contraseñas no coinciden.');
+    return;
+  }
+  
+  try {
+    await register(regUser, regPass);
+    // Después de registrar, hacer login automático
+    const response = await login(regUser, regPass);
+    onLogin(regUser, response.role || 'user');
+  } catch (err: any) {
+    setError(err.message || 'Error al registrar usuario');
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black flex items-center justify-center z-50">

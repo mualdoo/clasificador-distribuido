@@ -3,13 +3,15 @@ import { ChevronDown, User, Shield, LogOut } from 'lucide-react';
 import { Role } from '../types';
 
 interface Props {
+  
   username: string;
   role: Role;
+  actualRole: Role;
   onRoleChange: (role: Role) => void;
   onLogout: () => void;
 }
 
-export default function Header({ username, role, onRoleChange, onLogout }: Props) {
+export default function Header({ username, role, onRoleChange, onLogout, actualRole }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,6 +30,7 @@ export default function Header({ username, role, onRoleChange, onLogout }: Props
       className="flex items-center justify-end px-5 py-2.5 border-b relative z-40"
       style={{ background: '#111113', borderColor: '#2a2a2e' }}
     >
+      
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen(v => !v)}
@@ -50,40 +53,49 @@ export default function Header({ username, role, onRoleChange, onLogout }: Props
         </button>
 
         {open && (
+
           <div
             className="absolute right-0 top-full mt-1 rounded-xl py-1.5 w-52 shadow-2xl z-50"
             style={{ background: '#1c1c1e', border: '1px solid #2a2a2e' }}
           >
-            <p
-              className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
-              style={{ color: '#555' }}
-            >
-              Vista de Rol
-            </p>
 
-            <button
-              onClick={() => { onRoleChange('user'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5"
-              style={{ color: role === 'user' ? '#fff' : '#aaa' }}
-            >
-              <User size={15} />
-              Usuario Estándar
-              {role === 'user' && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
-              )}
-            </button>
+           {actualRole === 'admin' && (
+              <>
+                <p
+                  className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wider"
+                  style={{ color: '#555' }}
+                >
+                  Vista de Rol
+                </p>
 
-            <button
-              onClick={() => { onRoleChange('admin'); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5"
-              style={{ color: role === 'admin' ? '#fff' : '#aaa' }}
-            >
-              <Shield size={15} />
-              Administrador
-              {role === 'admin' && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
-              )}
-            </button>
+                <button
+                  onClick={() => { onRoleChange('user'); setOpen(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5"
+                  style={{ color: role === 'user' ? '#fff' : '#aaa' }}
+                >
+                  <User size={15} />
+                  Usuario Estándar
+                  {role === 'user' && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => { onRoleChange('admin'); setOpen(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-white/5"
+                  style={{ color: role === 'admin' ? '#fff' : '#aaa' }}
+                >
+                  <Shield size={15} />
+                  Administrador
+                  {role === 'admin' && (
+                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  )}
+                </button>
+
+                <div className="my-1.5" style={{ borderTop: '1px solid #2a2a2e' }} />
+              </>
+            )}
+            
 
             <div className="my-1.5" style={{ borderTop: '1px solid #2a2a2e' }} />
 

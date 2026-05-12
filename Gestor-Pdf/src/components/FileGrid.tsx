@@ -2,12 +2,34 @@ import React, { useState } from 'react';
 import { FileText, Tag, Download, Trash2 } from 'lucide-react';
 import { PDFFile } from '../types';
 
+import { downloadFile } from '../api';
+
+
+
 interface Props {
   files: PDFFile[];
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onDelete: (id: string) => void;
 }
+
+
+const handleDownload = async (fileId: string, fileName: string) => {
+  try {
+    const blob = await downloadFile(fileId);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Error al descargar archivo:', error);
+    alert('Error al descargar el archivo');
+  }
+};
 
 export default function FileGrid({ files, selectedIds, onToggleSelect, onDelete }: Props) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -70,12 +92,13 @@ export default function FileGrid({ files, selectedIds, onToggleSelect, onDelete 
                 {isHovered && (
                   <div className="absolute bottom-2.5 right-2.5 flex gap-1.5">
                     <button
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-90"
-                      style={{ background: '#2563eb' }}
-                      title="Descargar"
-                    >
-                      <Download size={14} className="text-white" />
-                    </button>
+                        onClick={() => handleDownload(file.id, file.name)}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:opacity-90"
+                        style={{ background: '#2563eb' }}
+                        title="Descargar"
+                      >
+                        <Download size={14} className="text-white" />
+                      </button>
                     <button
                       onClick={() => onDelete(file.id)}
                       className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"

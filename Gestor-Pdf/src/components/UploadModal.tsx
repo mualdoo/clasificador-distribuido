@@ -1,6 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, CheckCircle } from 'lucide-react';
 
+//api
+import { uploadFile } from '../api';
+
 interface Props {
   onClose: () => void;
   onUpload: (fileName: string, category: string) => void;
@@ -17,29 +20,37 @@ export default function UploadModal({ onClose, onUpload }: Props) {
 
   const mockCategories = ['JavaScript', 'Python', 'React', 'Matemáticas', 'Diseño', 'General'];
 
-  const startUpload = (name: string) => {
+  const startUpload = async (file: File) => {
     setStage('uploading');
     setProgress(0);
-    const cat = mockCategories[Math.floor(Math.random() * mockCategories.length)];
-
-    const interval = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) {
-          clearInterval(interval);
-          setAssignedCat(cat);
-          setStage('done');
-          onUpload(name, cat);
-          return 100;
-        }
-        return p + 5;
-      });
-    }, 80);
+    
+    try {
+      // Simular progreso mientras se sube
+      const progressInterval = setInterval(() => {
+        setProgress(p => Math.min(p + 10, 90));
+      }, 200);
+      
+      const response = await uploadFile(file);
+      
+      clearInterval(progressInterval);
+      setProgress(100);
+      setAssignedCat(response.categoria || 'General');
+      setStage('done');
+      onUpload(file.name, response.categoria);
+    } catch (error: any) {
+      console.error('Error al subir archivo:', error);
+      alert('Error al subir el archivo: ' + error.message);
+      setStage('idle');
+      setProgress(0);
+    }
   };
 
-  const handleFile = (f: File) => {
-    if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) {
-      startUpload(f.name);
-    }
+
+ const handleFile = (f: File) => {
+  if (f.type === 'application/pdf' || f.name.endsWith('.pdf')) {
+    startUpload(f); // Ahora pasa el archivo completo
+  }
+  
   };
 
   const handleDrop = (e: React.DragEvent) => {
