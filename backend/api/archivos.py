@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Backgro
 from fastapi.responses import Response
 
 from backend.api.auth import verificar_token
-from backend.services.services import ArchivoService, UbicacionArchivoService, NodoService
+from backend.services.services import ArchivoService, UbicacionArchivoService, NodoService, UsuarioService
 from backend.services.io_service import IOService
 from backend.network.client import P2PClient
 from backend.config import NODE_ID
+from backend.services.clasification import ClasificadorService
 
 router = APIRouter(prefix="/archivos", tags=["Archivos"])
 
@@ -15,15 +16,13 @@ router = APIRouter(prefix="/archivos", tags=["Archivos"])
 archivo_service = ArchivoService()
 ubicacion_service = UbicacionArchivoService()
 nodo_service = NodoService()
+usuario_service = UsuarioService()
 io_service = IOService()
 p2p_client = P2PClient()
+analizador = ClasificadorService()
 
 PUERTO_TCP_RED = 5555  # Asumimos este puerto para la comunicación P2P
 
-# --- Función Helper Hardcodeada ---
-def clasificador_ia_simulado(nombre_archivo: str):
-    """Simula una IA que clasifica el archivo."""
-    return "documentos", "general", 0.95
 
 # --- Tareas en Segundo Plano (Distribución P2P) ---
 def propagar_archivo_red(usuario_id: str, archivo_id: str, archivo_dict: dict, contenido_bytes: bytes):
@@ -91,16 +90,34 @@ async def subir_archivo(
     usuario_id = datos_token['id']
     nuevo_id = str(uuid.uuid4())
     
+    usuario_db = usuario_service.get_one(usuario_id)
+
+    if not usuario_db:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # 2. Extraer los intereses
+    intereses_usuario = usuario_db.get("intereses", [])
+    
     # 1. Leer contenido en la memoria RAM
     contenido_bytes = await archivo.read()
     
     # El tamaño lo calculamos directamente de la memoria
     tamano = len(contenido_bytes) 
     
-    # Ya NO guardamos en el io_service aquí
+    # 2. Clasificación
+    analisis = analizador.procesar_documento(contenido_bytes, categorias_permitidas=intereses_usuario)
     
-    # 2. Clasificación simulada
-    categoria, subcategoria, confianza = clasificador_ia_simulado(archivo.filename)
+    if not analisis["es_valido"]:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Rechazado por la red: {analisis['razon']}"
+        )
+        
+    # Extraemos los datos para guardarlos
+    categoria = analisis["clasificacion"]["categoria"]
+    subcategoria = analisis["clasificacion"]["subcategoria"]
+    confianza = analisis["clasificacion"]["confianza"]
+
     
     # 3. Guardar metadatos localmente (siempre debemos tenerlos)
     archivo_dict = archivo_service.create(

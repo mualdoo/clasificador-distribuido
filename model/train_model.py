@@ -1,47 +1,34 @@
 import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 import joblib
 
-ruta_csv = '/media/aldo/Data/Arxiv/archive/dataset_arxiv_limpio.csv'
+ruta_csv = '/media/aldo/Data/Arxiv/archive/dataset_arxiv_balance.csv'
 
-# 1. Escaneo rápido para encontrar todas las etiquetas compuestas únicas
-print("Escaneando el CSV para identificar todas las categorías y subcategorías...")
-# Leemos solo la columna 'categoria' para no saturar la RAM
-df_clases = pd.read_csv(ruta_csv, usecols=['categoria'])
-clases_posibles = df_clases['categoria'].unique()
-print(f"Se encontraron {len(clases_posibles)} combinaciones únicas de Categoría|Subcategoría.")
-del df_clases # Liberamos memoria inmediatamente
+print("1. Cargando el dataset completo en memoria...")
+# Como el CSV ya está limpio, cabe perfectamente en la RAM de una PC normal
+df = pd.read_csv(ruta_csv)
 
-# 2. Configuración del Vectorizador y el Modelo
-print("\nConfigurando motor de IA...")
-# max_features asegura que la huella de memoria se mantenga baja
-vectorizador = HashingVectorizer(n_features=2**18, stop_words='english', alternate_sign=False)
-modelo = SGDClassifier(loss='log_loss', random_state=42)
+# Nos aseguramos de que no haya filas vacías
+df = df.dropna(subset=['resumen', 'categoria'])
 
-# 3. Entrenamiento por lotes (Chunking)
-tamano_lote = 50000
-print(f"Iniciando entrenamiento por lotes de {tamano_lote} documentos...")
+print("2. Vectorizando con TF-IDF...")
+print("(Esto le dará un peso enorme a palabras raras como 'RNA' o 'Célula')")
+# Usamos TF-IDF. max_features=50000 mantiene un vocabulario gigante pero sin explotar la RAM
+vectorizador = TfidfVectorizer(max_features=50000, stop_words='english')
+X_vectorizado = vectorizador.fit_transform(df['resumen'])
 
-lotes = pd.read_csv(ruta_csv, chunksize=tamano_lote)
+print("3. Entrenando el modelo de IA...")
+print("(Aplicando 'class_weight=balanced' para quitarle la obsesión por la Física)")
 
-for i, lote in enumerate(lotes):
-    # Aseguramos que el texto sea String y limpiamos posibles nulos
-    X_texto = lote['resumen'].astype(str).fillna('')
-    y_etiquetas = lote['categoria']
-    
-    # Transformación matemática
-    X_vectorizado = vectorizador.transform(X_texto)
-    
-    # Aprendizaje incremental
-    modelo.partial_fit(X_vectorizado, y_etiquetas, classes=clases_posibles)
-    
-    print(f" Lote {i+1} procesado y aprendido.")
+# Aquí está la magia: 'balanced' obliga a la IA a respetar a las categorías pequeñas
+modelo = SGDClassifier(loss='log_loss', class_weight='balanced', random_state=42)
 
-# 4. Guardado de los pesos y el cerebro
-print("\nEntrenamiento finalizado. Guardando archivos .pkl...")
-joblib.dump(modelo, 'model.pkl')
-joblib.dump(vectorizador, 'vectorizador.pkl')
+# Entrenamos todo de un solo golpe (fit en lugar de partial_fit)
+modelo.fit(X_vectorizado, df['categoria'])
 
-print("¡Éxito! Archivos generados: 'model.pkl' y 'vectorizador.pkl'")
+print("\n4. Guardando el cerebro de la IA...")
+joblib.dump(modelo, 'clasificador_nodos.pkl')
+joblib.dump(vectorizador, 'vectorizador_nodos.pkl')
+
+print("¡Modelo entrenado exitosamente!")

@@ -67,7 +67,6 @@ Finanzas|ST
 Finanzas|TR
 Fisica|acc-ph
 Fisica|ao-ph
-Fisica|app-ph
 Fisica|astro-ph
 Fisica|atm-clus
 Fisica|atom-ph
